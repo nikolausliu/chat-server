@@ -1,0 +1,36 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+          
+      - name: Upload
+        uses: appleboy/scp-action@master
+        with: 
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          source: "src/,ecosystem.config.js,package.json"
+          target: "/home/niko/chat-server"
+      
+      - name: Server Reload
+        uses: appleboy/ssh-action@master
+        with: 
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            cd /home/niko/chat-server
+            npm i
+            pm2 reload ecosystem.config.js
